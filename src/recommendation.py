@@ -7,48 +7,50 @@ import os
 
 recommendation = Blueprint('recommendation',__name__)
 
+def fetch_busy_users(qsse, url, headers):
+    busy_users = []
+    for qs in qsse:
+        params = {'interval[start]' : qs[0], 'interval[end]': qs[1], 'interval[match]': "intersects"}
+        response = requests.request("GET", url + '/shifts', headers=headers, params = params)
+        overlapped_shifts = json.loads(response.text)
+        booked_users = []
+        for shift in overlapped_shifts:
+            if shift['booked']:
+                [booked_users.append(user) for user in shift['booked-users'] if user not in booked_users]
+        busy_users.append(booked_users)
 
-def get_bookable_users(query_shifts, shifts_data, users_data):
-    format_string = "%Y-%m-%dT%H:%M:%S.%f"
-    query_shifts_startend = [
-            (dt.strptime(shift_data['start'], format_string), dt.strptime(shift_data['end'], format_string))
-            for shift_data in shifts_data
-            if shift_data['id'] in query_shifts
-        ]
+    return busy_users
 
-    candidates_list = []
-    for qsse in query_shifts_startend:
-        candidates = [user['id'] for user in users_data]
-        for shift in shifts_data:
-            if shift['booked'] and dt.strptime(shift['start'],format_string) < qsse[1] and dt.strptime(shift['end'],format_string) > qsse[0]:
-                [candidates.remove(user) for user in shift["booked-users"] if user in candidates]
-        candidates_list.append(candidates)
-    return candidates_list
+def fetch_shifts_start_end(shifts, url, headers):
+    response = requests.request("GET", url + '/shifts', headers=headers)
+    all_shifts = json.loads(response.text)
 
+    selected_shifts = filter(lambda shift: shift['id'] in shifts, all_shifts)
+    return list((shift['start'], shift['end']) for shift in selected_shifts)
 
 @recommendation.route("/api/ml/v1/recommendation", methods=['GET'])
 def recommend_and_return():
     number = int(request.args.get("limit"))
 
-    #shift_ids acquired, but not doing anything with it yet.
     ids_qp = request.args.get("ids")
     query_shifts = [id.strip() for id in ids_qp.split(',')]
 
     headers = {"Authorization":request.headers["Authorization"]}
 
     TZBACKEND_URL = os.getenv('TZBACKEND_URL')
+
+    qsse = fetch_shifts_start_end(query_shifts, TZBACKEND_URL, headers)
+
+    busy_users_list = fetch_busy_users(qsse, TZBACKEND_URL, headers)
+
     users = requests.request("GET", TZBACKEND_URL + '/users', headers=headers)
-    shifts = requests.request("GET", TZBACKEND_URL + '/shifts', headers=headers)
-
     users_data = json.loads(users.text)
-    shifts_data = json.loads(shifts.text)
-
-    bookable_users = get_bookable_users(query_shifts, shifts_data, users_data)
-
+    user_ids = [user['id'] for user in users_data]
+    avail_list = [[user for user in user_ids if user not in busy_users] for busy_users in busy_users_list]
     res_list = []
-    for users in bookable_users:
+    for users in avail_list:
         random.shuffle(users)
         res_ids = users[:number] if len(users)>number else users
         res_list.append(res_ids)
 
-return jsonify(res_list)
+    return jsonify(res_list)
