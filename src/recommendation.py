@@ -28,7 +28,6 @@ def get_bookable_users(query_shifts, shifts_data, users_data):
 
 @recommendation.route("/api/ml/v1/recommendation", methods=['GET'])
 def recommend_and_return():
-    payload = ""
     number = int(request.args.get("limit"))
 
     #shift_ids acquired, but not doing anything with it yet.
@@ -38,8 +37,8 @@ def recommend_and_return():
     headers = {"Authorization":request.headers["Authorization"]}
 
     TZBACKEND_URL = os.getenv('TZBACKEND_URL')
-    users = requests.request("GET", TZBACKEND_URL + '/users', data=payload, headers=headers)
-    shifts = requests.request("GET", TZBACKEND_URL + '/shifts', data=payload, headers=headers)
+    users = requests.request("GET", TZBACKEND_URL + '/users', headers=headers)
+    shifts = requests.request("GET", TZBACKEND_URL + '/shifts', headers=headers)
 
     users_data = json.loads(users.text)
     shifts_data = json.loads(shifts.text)
@@ -52,4 +51,4 @@ def recommend_and_return():
         res_ids = users[:number] if len(users)>number else users
         res_list.append(res_ids)
 
-    return jsonify(res_list)
+return jsonify(res_list)
