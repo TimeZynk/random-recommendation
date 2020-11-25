@@ -58,10 +58,6 @@ def recommend_and_return():
 
     excluded_users_list = list(map(lambda x,y: x.union(y),busy_users_list, unavailable_list))
 
-    print(busy_users_list)
-    print(unavailable_list)
-    print(excluded_users_list)
-
     users = requests.request("GET", TZBACKEND_URL + '/users', headers=headers)
     users_data = json.loads(users.text)
     user_ids = [user['id'] for user in users_data]
