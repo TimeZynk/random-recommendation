@@ -39,22 +39,21 @@ def fetch_shifts_start_end(shifts, url, headers):
     selected_shifts = filter(lambda shift: shift['id'] in shifts, all_shifts)
     return list((shift['start'], shift['end']) for shift in selected_shifts)
 
-def fetch_combinations(shifts, url, headers):
+def fetch_combinations(shifts, url, headers, user_id):
     params = {"ids" : ",".join(shifts)}
     response = requests.request("GET", url + '/ref-data/v1/shifts', headers=headers, params = params)
     shifts_refdata = json.loads(response.text)
     registers_it = map(lambda x: list(x['registers'].values()) if 'registers' in x.keys() else [], shifts_refdata.values())
 
-    
-    user_id = {"user-id": "5fae44a05866602bef205abb"}
-    response_rs = requests.request("GET", url + '/registers/v1/summary', headers=headers, params = user_id)
+    params_rs = {"user-id": user_id}
+    response_rs = requests.request("GET", url + '/registers/v1/summary', headers=headers, params = params_rs)
     registers_summary = json.loads(response_rs.text)
     registry_data = registers_summary['registry-data']
 
     return [list(map(lambda z: z['permissions']['schedule'], filter(lambda x: x['id'] in registers and 'permissions' in x.keys(), registry_data))) for registers in registers_it]
 
-def fetch_ineligible_users(shifts, url, headers):
-    combinations_list = fetch_combinations(shifts, url, headers)
+def fetch_ineligible_users(shifts, url, headers, user_id):
+    combinations_list = fetch_combinations(shifts, url, headers, user_id)
     response = requests.request("GET", url + '/users', headers=headers)
     users = json.loads(response.text)
 
@@ -68,6 +67,7 @@ def fetch_ineligible_users(shifts, url, headers):
 @recommendation.route("/api/ml/v1/recommendation", methods=['GET'])
 def recommend_and_return():
     number = int(request.args.get("limit"))
+    user_id = request.args.get("user-id")
 
     ids_qp = request.args.get("ids")
     query_shifts = [id.strip() for id in ids_qp.split(',')]
@@ -82,7 +82,7 @@ def recommend_and_return():
 
     unavailable_list = fetch_unavailable_users(qsse, TZBACKEND_URL, headers)
 
-    ineligible_users_list = fetch_ineligible_users(query_shifts, TZBACKEND_URL, headers)
+    ineligible_users_list = fetch_ineligible_users(query_shifts, TZBACKEND_URL, headers, user_id)
 
     excluded_users_list = list(map(lambda x,y,z: x.union(y,z), busy_users_list, unavailable_list, ineligible_users_list))
 
