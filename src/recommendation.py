@@ -39,6 +39,32 @@ def fetch_shifts_start_end(shifts, url, headers):
     selected_shifts = filter(lambda shift: shift['id'] in shifts, all_shifts)
     return list((shift['start'], shift['end']) for shift in selected_shifts)
 
+def fetch_combinations(shifts, url, headers):
+    params = {"ids" : ",".join(shifts)}
+    response = requests.request("GET", url + '/ref-data/v1/shifts', headers=headers, params = params)
+    shifts_refdata = json.loads(response.text)
+    registers_it = map(lambda x: list(x['registers'].values()) if 'registers' in x.keys() else [], shifts_refdata.values())
+
+    
+    user_id = {"user-id": "5fae44a05866602bef205abb"}
+    response_rs = requests.request("GET", url + '/registers/v1/summary', headers=headers, params = user_id)
+    registers_summary = json.loads(response_rs.text)
+    registry_data = registers_summary['registry-data']
+
+    return [list(map(lambda z: z['permissions']['schedule'], filter(lambda x: x['id'] in registers and 'permissions' in x.keys(), registry_data))) for registers in registers_it]
+
+def fetch_ineligible_users(shifts, url, headers):
+    combinations_list = fetch_combinations(shifts, url, headers)
+    response = requests.request("GET", url + '/users', headers=headers)
+    users = json.loads(response.text)
+
+    ineligible_users = []
+    for combinations in combinations_list:
+        elig_it = filter(lambda x: 'combinations' not in x.keys() or not set(combinations).issubset(set(x['combinations'])), users)
+        ineligible_users.append(set(map(lambda x: x['id'], elig_it)))
+        
+    return ineligible_users
+
 @recommendation.route("/api/ml/v1/recommendation", methods=['GET'])
 def recommend_and_return():
     number = int(request.args.get("limit"))
@@ -56,7 +82,9 @@ def recommend_and_return():
 
     unavailable_list = fetch_unavailable_users(qsse, TZBACKEND_URL, headers)
 
-    excluded_users_list = list(map(lambda x,y: x.union(y),busy_users_list, unavailable_list))
+    ineligible_users_list = fetch_ineligible_users(query_shifts, TZBACKEND_URL, headers)
+
+    excluded_users_list = list(map(lambda x,y,z: x.union(y,z), busy_users_list, unavailable_list, ineligible_users_list))
 
     users = requests.request("GET", TZBACKEND_URL + '/users', headers=headers)
     users_data = json.loads(users.text)
