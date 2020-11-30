@@ -33,11 +33,13 @@ def fetch_unavailable_users(qsse, url, headers):
     return unavailable_users
 
 def fetch_shifts_start_end(shifts, url, headers):
-    response = requests.request("GET", url + '/shifts', headers=headers)
-    all_shifts = json.loads(response.text)
+    start_end_list = []
+    for shift in shifts:
+        response = requests.request("GET", url + '/shifts', headers=headers, params = {"id": shift})
+        shift_data = json.loads(response.text)
+        start_end_list.append((shift_data[0]['start'], shift_data[0]['end']))
 
-    selected_shifts = filter(lambda shift: shift['id'] in shifts, all_shifts)
-    return list((shift['start'], shift['end']) for shift in selected_shifts)
+    return start_end_list
 
 def fetch_combinations(shifts, url, headers, user_id):
     params = {"ids" : ",".join(shifts)}
