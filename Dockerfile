@@ -21,4 +21,4 @@ ENV TZBACKEND_URL=http://localhost:8989/api
 EXPOSE 5000
 
 # command to run on container start
-CMD [ "python3", "./main.py" ]
+CMD [ "python3", "./run.py" ]
