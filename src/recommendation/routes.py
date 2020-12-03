@@ -27,10 +27,11 @@ def health_check_tzbackend():
     try:
         # response defined not used?
         response = requests.request("GET", url + "/health-check")
-        return True, "Timezynk backend health checked."
-    except:
+        return True, response.status_code
+    except Exception:
         # Something should be done here to capture the exception?
-        return False, "Error connecting to {}".format(url)
+        print("Error connecting to Timezynk Backend.")
+        return False, response.status_code
 
 
 @recommendation.route("/api/ml/v1/recommendation", methods=["GET"])
