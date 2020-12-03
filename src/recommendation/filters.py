@@ -63,9 +63,7 @@ def fetch_combinations(shifts, url, headers, user_id):
     )
     shifts_refdata = json.loads(response.text)
     registers_it = map(
-        lambda x: list(x["registers"].values())
-        if "registers" in x.keys()
-        else [],
+        lambda x: list(x["registers"].values()) if "registers" in x.keys() else [],
         shifts_refdata.values(),
     )
 
@@ -81,8 +79,7 @@ def fetch_combinations(shifts, url, headers, user_id):
             map(
                 lambda z: z["permissions"]["schedule"],
                 filter(
-                    lambda x: x["id"] in registers
-                    and "permissions" in x.keys(),
+                    lambda x: x["id"] in registers and "permissions" in x.keys(),
                     registry_data,
                 ),
             )
@@ -138,9 +135,9 @@ def week_start_end(shift_time):
     week_start = shift_time - timedelta(days=shift_time.weekday())
     week_end = week_start + timedelta(days=7)
     week_start_real = dt(week_start.year, week_start.month, week_start.day)
-    week_end_real = dt(
-        week_end.year, week_end.month, week_end.day
-    ) - timedelta(microseconds=1)
+    week_end_real = dt(week_end.year, week_end.month, week_end.day) - timedelta(
+        microseconds=1
+    )
     return (week_start_real, week_end_real)
 
 
@@ -160,20 +157,14 @@ def fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers):
                 week_start, week_end = week_start_end(shift_start)
                 # not considering the possibility of shifts bring longer than
                 #  24hrs and could overlap with a contract by a late portion.
-                if (
-                    shift_start >= wh["start-date"]
-                    and "end-date" not in wh.keys()
-                ):
+                if shift_start >= wh["start-date"] and "end-date" not in wh.keys():
                     intersection = (
                         max(week_start, wh["start-date"]),
                         week_end,
                     )
                 # Again not considering the situation of a shift last passing
                 #  the end-date of a contract.
-                elif (
-                    shift_start >= wh["start-date"]
-                    and shift_end <= wh["end-date"]
-                ):
+                elif shift_start >= wh["start-date"] and shift_end <= wh["end-date"]:
                     intersection = (
                         max(week_start, wh["start-date"]),
                         min(week_end, wh["end-date"]),
@@ -219,7 +210,5 @@ def fetch_no_work_hrs(qsse, url, headers):
 
     work_hours_data = fetch_work_hour_templates(url, headers, contracts)
 
-    no_hrs_users = fulltime_hrs_and_work_hrs(
-        qsse, work_hours_data, url, headers
-    )
+    no_hrs_users = fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers)
     return no_hrs_users
