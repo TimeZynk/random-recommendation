@@ -13,9 +13,12 @@ RUN pip3 install -r requirements.txt
 # copy the content of the local src directory to the working directory
 COPY src/ .
 
+# Precompile python code for performance
+RUN python3 -m compileall .
+
 ENV TZBACKEND_URL=http://localhost:8989/api
 
 EXPOSE 5000
 
 # command to run on container start
-CMD [ "python3", "./main.py" ]
+CMD [ "python3", "./run.py" ]
