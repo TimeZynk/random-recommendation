@@ -1,5 +1,4 @@
 from flask import jsonify, request, Blueprint
-from healthcheck import HealthCheck
 from recommendation.filters import (
     fetch_shifts_start_end,
     fetch_busy_users,
@@ -15,23 +14,13 @@ import os
 recommendation = Blueprint("recommendation", __name__)
 
 
-@recommendation.route("/api/ml/v1/health-check", methods=["GET"])
+@recommendation.route("/api/health-check", methods=["GET"])
 def health_check():
-    health = HealthCheck()
-    health.add_check(health_check_tzbackend)
-    return health.run()
-
-
-def health_check_tzbackend():
-    url = os.getenv("TZBACKEND_URL")
-    try:
-        # response defined not used?
-        response = requests.request("GET", url + "/health-check")
-        return True, response.status_code
-    except Exception:
-        # Something should be done here to capture the exception?
-        print("Error connecting to Timezynk Backend.")
-        return False, response.status_code
+    return (
+        json.dumps({"success": True}),
+        200,
+        {"ContentType": "application/json"}
+    )
 
 
 @recommendation.route("/api/ml/v1/recommendation", methods=["GET"])
