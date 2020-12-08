@@ -2,9 +2,16 @@ from datetime import datetime as dt
 from datetime import timedelta
 import requests
 import json
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 def fetch_busy_users(qsse, url, headers):
+
+    logger.debug("fetch_busy_users")
+
     busy_users = []
     for qs in qsse:
         params = {
@@ -26,6 +33,9 @@ def fetch_busy_users(qsse, url, headers):
 
 
 def fetch_unavailable_users(qsse, url, headers):
+
+    logger.debug("fetch_unavailable_users")
+
     unavailable_users = []
     for qs in qsse:
         params = {
@@ -45,6 +55,9 @@ def fetch_unavailable_users(qsse, url, headers):
 
 
 def fetch_shifts_start_end(shifts, url, headers):
+
+    logger.debug("fetch_shifts_start_end")
+
     start_end_list = []
     for shift in shifts:
         response = requests.request(
@@ -57,6 +70,9 @@ def fetch_shifts_start_end(shifts, url, headers):
 
 
 def fetch_combinations(shifts, url, headers, user_id):
+
+    logger.debug("fetch_combinations")
+
     params = {"ids": ",".join(shifts)}
     response = requests.request(
         "GET", url + "/ref-data/v1/shifts", headers=headers, params=params
@@ -92,6 +108,9 @@ def fetch_combinations(shifts, url, headers, user_id):
 
 
 def fetch_ineligible_users(shifts, url, headers, user_id):
+
+    logger.debug("fetch_ineligible_users")
+
     combinations_list = fetch_combinations(shifts, url, headers, user_id)
     response = requests.request("GET", url + "/users", headers=headers)
     users = json.loads(response.text)
@@ -109,6 +128,9 @@ def fetch_ineligible_users(shifts, url, headers, user_id):
 
 
 def fetch_work_hour_templates(url, headers, contracts):
+
+    logger.debug("fetch_work_hour_templates")
+
     fmt = "%Y-%m-%d"
     users_dict = {}
     for contract in contracts:
@@ -135,6 +157,9 @@ def fetch_work_hour_templates(url, headers, contracts):
 
 
 def week_start_end(shift_time):
+
+    logger.debug("week_start_end")
+
     week_start = shift_time - timedelta(days=shift_time.weekday())
     week_end = week_start + timedelta(days=7)
     week_start_real = dt(week_start.year, week_start.month, week_start.day)
@@ -149,6 +174,9 @@ def fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers):
     In the current implementation we're under the assumption that the shifts
      are short and not exdended over several contracts.
     """
+
+    logger.debug("fulltime_hrs_and_work_hrs")
+
     fmt = "%Y-%m-%dT%H:%M:%S.%f"
     no_hrs_users = []
     for qs in qsse:
@@ -209,6 +237,9 @@ def fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers):
 
 
 def fetch_no_work_hrs(qsse, url, headers):
+
+    logger.debug("fetch_no_work_hrs")
+
     response = requests.request(
         "GET",
         url + "/employment-contracts",
