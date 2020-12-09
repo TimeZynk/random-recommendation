@@ -5,11 +5,12 @@ import json
 import logging
 
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 
 def fetch_busy_users(qsse, url, headers):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_busy_users")
 
     busy_users = []
@@ -34,6 +35,7 @@ def fetch_busy_users(qsse, url, headers):
 
 def fetch_unavailable_users(qsse, url, headers):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_unavailable_users")
 
     unavailable_users = []
@@ -56,6 +58,7 @@ def fetch_unavailable_users(qsse, url, headers):
 
 def fetch_shifts_start_end(shifts, url, headers):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_shifts_start_end")
 
     start_end_list = []
@@ -71,6 +74,7 @@ def fetch_shifts_start_end(shifts, url, headers):
 
 def fetch_combinations(shifts, url, headers, user_id):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_combinations")
 
     params = {"ids": ",".join(shifts)}
@@ -109,6 +113,7 @@ def fetch_combinations(shifts, url, headers, user_id):
 
 def fetch_ineligible_users(shifts, url, headers, user_id):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_ineligible_users")
 
     combinations_list = fetch_combinations(shifts, url, headers, user_id)
@@ -129,6 +134,7 @@ def fetch_ineligible_users(shifts, url, headers, user_id):
 
 def fetch_work_hour_templates(url, headers, contracts):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_work_hour_templates")
 
     fmt = "%Y-%m-%d"
@@ -158,6 +164,7 @@ def fetch_work_hour_templates(url, headers, contracts):
 
 def week_start_end(shift_time):
 
+    logger = logging.getLogger(__name__)
     logger.debug("week_start_end")
 
     week_start = shift_time - timedelta(days=shift_time.weekday())
@@ -175,6 +182,7 @@ def fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers):
      are short and not exdended over several contracts.
     """
 
+    logger = logging.getLogger(__name__)
     logger.debug("fulltime_hrs_and_work_hrs")
 
     fmt = "%Y-%m-%dT%H:%M:%S.%f"
@@ -238,6 +246,7 @@ def fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers):
 
 def fetch_no_work_hrs(qsse, url, headers):
 
+    logger = logging.getLogger(__name__)
     logger.debug("fetch_no_work_hrs")
 
     response = requests.request(

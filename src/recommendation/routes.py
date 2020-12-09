@@ -13,12 +13,12 @@ import os
 import logging
 
 recommendation = Blueprint("recommendation", __name__)
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 
 @recommendation.route("/api/health-check", methods=["GET"])
 def health_check():
-
+    logger = logging.getLogger(__name__)
     logger.info("health_check")
 
     return (
@@ -30,7 +30,7 @@ def health_check():
 
 @recommendation.route("/api/ml/v1/recommendation", methods=["GET"])
 def recommend_and_return():
-
+    logger = logging.getLogger(__name__)
     logger.info("recommend_and_return")
 
     number = int(request.args.get("limit"))
