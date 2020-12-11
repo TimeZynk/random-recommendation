@@ -1,4 +1,4 @@
-from flask import jsonify, request, Blueprint
+from flask import request, Blueprint
 from recommendation.filters import (
     fetch_shifts_start_end,
     fetch_busy_users,
@@ -13,7 +13,6 @@ import os
 import logging
 
 recommendation = Blueprint("recommendation", __name__)
-#logger = logging.getLogger(__name__)
 
 
 @recommendation.route("/api/health-check", methods=["GET"])
@@ -33,10 +32,37 @@ def recommend_and_return():
     logger = logging.getLogger(__name__)
     logger.info("recommend_and_return")
 
-    number = int(request.args.get("limit"))
-    user_id = request.args.get("user-id")
+    # limit default value set to 10
+    number = (
+        int(request.args.get("limit"))
+        if request.args.get("limit") is not None
+        else 10
+    )
 
-    ids_qp = request.args.get("ids")
+    if request.args.get("user-id") is not None:
+        user_id = request.args.get("user-id")
+    else:
+        err_message = {
+            "message": "Request needs to include valid user-id query params"
+        }
+        return (
+            json.dumps(err_message),
+            400,
+            {"ContentType": "application/json"},
+        )
+
+    if request.args.get("ids") is not None:
+        ids_qp = request.args.get("ids")
+    else:
+        err_message = {
+            "message": "Request needs to include valid ids query params"
+        }
+        return (
+            json.dumps(err_message),
+            400,
+            {"ContentType": "application/json"},
+        )
+
     query_shifts = [id.strip() for id in ids_qp.split(",")]
 
     headers = {"Authorization": request.headers["Authorization"]}
@@ -78,4 +104,8 @@ def recommend_and_return():
         res_ids = users[:number] if len(users) > number else users
         res_list.append(res_ids)
 
-    return jsonify(res_list)
+    return (
+        json.dumps(res_list),
+        200,
+        {"ContentType": "application/json"},
+    )
