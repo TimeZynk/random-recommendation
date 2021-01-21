@@ -1,6 +1,6 @@
 from flask_restful import Api
-from recommendation import create_app
-from setup_logging import setup_logging
+from machine_learning_recommendation import create_app
+from machine_learning_recommendation.setup_logging import setup_logging
 
 # from os import path
 # import logging.config

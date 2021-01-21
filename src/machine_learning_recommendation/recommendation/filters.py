@@ -3,9 +3,9 @@ from datetime import timedelta
 import requests
 import json
 import logging
+from bson.objectid import ObjectId
 
-
-#logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 def fetch_busy_users(qsse, url, headers):
@@ -56,20 +56,27 @@ def fetch_unavailable_users(qsse, url, headers):
     return unavailable_users
 
 
-def fetch_shifts_start_end(shifts, url, headers):
+def fetch_shifts_start_end_created(shifts, url, headers):
 
     logger = logging.getLogger(__name__)
-    logger.debug("fetch_shifts_start_end")
+    logger.debug("fetch_shifts_start_end_created")
 
-    start_end_list = []
+    start_end_created_list = []
     for shift in shifts:
         response = requests.request(
             "GET", url + "/shifts", headers=headers, params={"id": shift}
         )
         shift_data = json.loads(response.text)
-        start_end_list.append((shift_data[0]["start"], shift_data[0]["end"]))
 
-    return start_end_list
+        start_end_created_list.append(
+            (
+                shift_data[0]["start"],
+                shift_data[0]["end"],
+                ObjectId(shift_data[0]["id"]).generation_time,
+            )
+        )
+
+    return start_end_created_list
 
 
 def fetch_combinations(shifts, url, headers, user_id):
@@ -83,17 +90,17 @@ def fetch_combinations(shifts, url, headers, user_id):
     )
     shifts_refdata = json.loads(response.text)
     registers_it = map(
-        lambda x: list(x["registers"].values())
-        if "registers" in x.keys()
-        else [],
+        lambda x: list(x["registers"].values()) if "registers" in x.keys() else [],
         shifts_refdata.values(),
     )
 
     params_rs = {"user-id": user_id}
+
     response_rs = requests.request(
         "GET", url + "/registers/v1/summary", headers=headers, params=params_rs
     )
     registers_summary = json.loads(response_rs.text)
+
     registry_data = registers_summary["registry-data"]
 
     return [
@@ -101,8 +108,7 @@ def fetch_combinations(shifts, url, headers, user_id):
             map(
                 lambda z: z["permissions"]["schedule"],
                 filter(
-                    lambda x: x["id"] in registers
-                    and "permissions" in x.keys(),
+                    lambda x: x["id"] in registers and "permissions" in x.keys(),
                     registry_data,
                 ),
             )
@@ -170,9 +176,9 @@ def week_start_end(shift_time):
     week_start = shift_time - timedelta(days=shift_time.weekday())
     week_end = week_start + timedelta(days=7)
     week_start_real = dt(week_start.year, week_start.month, week_start.day)
-    week_end_real = dt(
-        week_end.year, week_end.month, week_end.day
-    ) - timedelta(microseconds=1)
+    week_end_real = dt(week_end.year, week_end.month, week_end.day) - timedelta(
+        microseconds=1
+    )
     return (week_start_real, week_end_real)
 
 
@@ -196,20 +202,14 @@ def fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers):
                 week_start, week_end = week_start_end(shift_start)
                 # not considering the possibility of shifts bring longer than
                 #  24hrs and could overlap with a contract by a late portion.
-                if (
-                    shift_start >= wh["start-date"]
-                    and "end-date" not in wh.keys()
-                ):
+                if shift_start >= wh["start-date"] and "end-date" not in wh.keys():
                     intersection = (
                         max(week_start, wh["start-date"]),
                         week_end,
                     )
                 # Again not considering the situation of a shift last passing
                 #  the end-date of a contract.
-                elif (
-                    shift_start >= wh["start-date"]
-                    and shift_end <= wh["end-date"]
-                ):
+                elif shift_start >= wh["start-date"] and shift_end <= wh["end-date"]:
                     intersection = (
                         max(week_start, wh["start-date"]),
                         min(week_end, wh["end-date"]),
@@ -259,7 +259,5 @@ def fetch_no_work_hrs(qsse, url, headers):
 
     work_hours_data = fetch_work_hour_templates(url, headers, contracts)
 
-    no_hrs_users = fulltime_hrs_and_work_hrs(
-        qsse, work_hours_data, url, headers
-    )
+    no_hrs_users = fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers)
     return no_hrs_users

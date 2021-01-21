@@ -18,6 +18,8 @@ RUN python3 -m compileall .
 
 ENV TZBACKEND_URL=http://localhost:8989/api
 
+ENV ML_MODELS_DIR=/home/chuck/folder/recommend-api/trained_models
+
 EXPOSE 5000
 
 # command to run on container start

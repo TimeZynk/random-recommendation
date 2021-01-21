@@ -1,16 +1,18 @@
 from flask import request, Blueprint
-from recommendation.filters import (
-    fetch_shifts_start_end,
+from machine_learning_recommendation.recommendation.filters import (
+    fetch_shifts_start_end_created,
     fetch_busy_users,
     fetch_unavailable_users,
     fetch_ineligible_users,
     fetch_no_work_hrs,
 )
+
 import requests
 import json
 import random
 import os
 import logging
+from datetime import datetime
 
 recommendation = Blueprint("recommendation", __name__)
 
@@ -34,17 +36,23 @@ def recommend_and_return():
 
     # limit default value set to 10
     number = (
-        int(request.args.get("limit"))
-        if request.args.get("limit") is not None
+        int(request.args.get("limit")) if request.args.get("limit") is not None else 10
+    )
+
+    ml_recommend = (
+        request.args.get("ml-recommend") if request.args.get("ml-recommend") else False
+    )
+
+    ml_num_candidates = (
+        request.args.get("ml-num-candidates")
+        if request.args.get("ml-num-candidates")
         else 10
     )
 
     if request.args.get("user-id") is not None:
         user_id = request.args.get("user-id")
     else:
-        err_message = {
-            "message": "Request needs to include valid user-id query params"
-        }
+        err_message = {"message": "Request needs to include valid user-id query params"}
         return (
             json.dumps(err_message),
             400,
@@ -54,22 +62,44 @@ def recommend_and_return():
     if request.args.get("ids") is not None:
         ids_qp = request.args.get("ids")
     else:
-        err_message = {
-            "message": "Request needs to include valid ids query params"
-        }
+        err_message = {"message": "Request needs to include valid ids query params"}
         return (
             json.dumps(err_message),
             400,
             {"ContentType": "application/json"},
         )
 
-    query_shifts = [id.strip() for id in ids_qp.split(",")]
+    query_shifts = [_id.strip() for _id in ids_qp.split(",")]
 
     headers = {"Authorization": request.headers["Authorization"]}
 
     TZBACKEND_URL = os.getenv("TZBACKEND_URL")
 
-    qsse = fetch_shifts_start_end(query_shifts, TZBACKEND_URL, headers)
+    qssec = fetch_shifts_start_end_created(query_shifts, TZBACKEND_URL, headers)
+
+    ml_recommend_list = []
+    if ml_recommend:
+        fmt = "%Y-%m-%dT%H:%M:%S.%f"
+        sec = list(
+            map(
+                lambda x: (
+                    datetime.strptime(x[0], fmt),
+                    datetime.strptime(x[1], fmt),
+                    x[2],
+                ),
+                qssec,
+            )
+        )
+
+        for index, _id in enumerate(query_shifts):
+            feed_back = ml_models.recommend(
+                _id, sec[index][0], sec[index][1], sec[index][2], ml_num_candidates
+            )
+            ml_recommend_list.append(feed_back)
+
+    print(ml_recommend_list)
+
+    qsse = list(map(lambda x: (x[0], x[1]), qssec))
 
     busy_users_list = fetch_busy_users(qsse, TZBACKEND_URL, headers)
 
