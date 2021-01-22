@@ -1,7 +1,3 @@
-from machine_learning_recommendation.machine_learning import get_ml_models
+from machine_learning_recommendation.machine_learning.model_reader import ModelReader
 
-ml_models = get_ml_models()
-
-
-def init_machine_learning():
-    ml_models.read_all()
+machine_learning_models = ModelReader()

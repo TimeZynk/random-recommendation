@@ -1,5 +1,6 @@
 from flask import Flask
 from machine_learning_recommendation.config import Config
+from machine_learning_recommendation.recommendation import machine_learning_models
 import os
 
 
@@ -13,5 +14,7 @@ def create_app(config_class=Config):
     from machine_learning_recommendation.recommendation.routes import recommendation
 
     app.register_blueprint(recommendation)
+
+    machine_learning_models.read_all()
 
     return app

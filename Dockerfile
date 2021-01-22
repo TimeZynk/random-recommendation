@@ -13,12 +13,14 @@ RUN pip3 install -r requirements.txt
 # copy the content of the local src directory to the working directory
 COPY src/ .
 
+COPY trained_models .
+
 # Precompile python code for performance
 RUN python3 -m compileall .
 
 ENV TZBACKEND_URL=http://localhost:8989/api
 
-ENV ML_MODELS_DIR=/home/chuck/folder/recommend-api/trained_models
+ENV ML_MODELS_DIR=/app/trained_models
 
 EXPOSE 5000
 

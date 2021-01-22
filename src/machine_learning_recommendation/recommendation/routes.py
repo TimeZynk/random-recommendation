@@ -6,13 +6,22 @@ from machine_learning_recommendation.recommendation.filters import (
     fetch_ineligible_users,
     fetch_no_work_hrs,
 )
-
 import requests
 import json
-import random
 import os
 import logging
 from datetime import datetime
+from machine_learning_recommendation.recommendation.utils import (
+    get_arg_or_default,
+    get_error_return,
+    machine_learning_query,
+    lists_union,
+    object_and_200,
+    get_user_ids,
+    lists_difference,
+    list_shuffle,
+    concoct,
+)
 
 recommendation = Blueprint("recommendation", __name__)
 
@@ -34,42 +43,23 @@ def recommend_and_return():
     logger = logging.getLogger(__name__)
     logger.info("recommend_and_return")
 
-    # limit default value set to 10
-    number = (
-        int(request.args.get("limit")) if request.args.get("limit") is not None else 10
-    )
+    number_to_return = get_arg_or_default("limit", int, 10)
+    ml_recommend = get_arg_or_default("ml-recommend", int, 0)
+    ml_num_candidates = get_arg_or_default("ml_num_candidates", int, 10)
 
-    ml_recommend = (
-        request.args.get("ml-recommend") if request.args.get("ml-recommend") else False
-    )
-
-    ml_num_candidates = (
-        request.args.get("ml-num-candidates")
-        if request.args.get("ml-num-candidates")
-        else 10
-    )
-
-    if request.args.get("user-id") is not None:
-        user_id = request.args.get("user-id")
-    else:
-        err_message = {"message": "Request needs to include valid user-id query params"}
-        return (
-            json.dumps(err_message),
-            400,
-            {"ContentType": "application/json"},
+    user_id = request.args.get("user-id")
+    if not user_id:
+        err_return = get_error_return(
+            "Request needs to include valid user-id query params"
         )
+        return err_return
 
-    if request.args.get("ids") is not None:
-        ids_qp = request.args.get("ids")
-    else:
-        err_message = {"message": "Request needs to include valid ids query params"}
-        return (
-            json.dumps(err_message),
-            400,
-            {"ContentType": "application/json"},
-        )
+    ids_list = request.args.get("ids")
+    if not ids_list:
+        err_return = get_error_return("Request needs to include valid ids query params")
+        return err_return
 
-    query_shifts = [_id.strip() for _id in ids_qp.split(",")]
+    query_shifts = [_id.strip() for _id in ids_list.split(",")]
 
     headers = {"Authorization": request.headers["Authorization"]}
 
@@ -77,27 +67,9 @@ def recommend_and_return():
 
     qssec = fetch_shifts_start_end_created(query_shifts, TZBACKEND_URL, headers)
 
-    ml_recommend_list = []
-    if ml_recommend:
-        fmt = "%Y-%m-%dT%H:%M:%S.%f"
-        sec = list(
-            map(
-                lambda x: (
-                    datetime.strptime(x[0], fmt),
-                    datetime.strptime(x[1], fmt),
-                    x[2],
-                ),
-                qssec,
-            )
-        )
-
-        for index, _id in enumerate(query_shifts):
-            feed_back = ml_models.recommend(
-                _id, sec[index][0], sec[index][1], sec[index][2], ml_num_candidates
-            )
-            ml_recommend_list.append(feed_back)
-
-    print(ml_recommend_list)
+    ml_recommend_list = machine_learning_query(
+        ml_recommend, qssec, query_shifts, ml_num_candidates
+    )
 
     qsse = list(map(lambda x: (x[0], x[1]), qssec))
 
@@ -111,31 +83,23 @@ def recommend_and_return():
 
     no_work_hrs_list = fetch_no_work_hrs(qsse, TZBACKEND_URL, headers)
 
-    excluded_users_list = list(
-        map(
-            lambda x, y, z, a: x.union(y, z, a),
-            busy_users_list,
-            unavailable_list,
-            ineligible_users_list,
-            no_work_hrs_list,
-        )
+    excluded_users_list = lists_union(
+        busy_users_list,
+        unavailable_list,
+        ineligible_users_list,
+        no_work_hrs_list,
     )
 
-    users = requests.request("GET", TZBACKEND_URL + "/users", headers=headers)
-    users_data = json.loads(users.text)
-    user_ids = [user["id"] for user in users_data]
-    avail_list = [
-        [user for user in user_ids if user not in excluded_users]
-        for excluded_users in excluded_users_list
-    ]
-    res_list = []
-    for users in avail_list:
-        random.shuffle(users)
-        res_ids = users[:number] if len(users) > number else users
-        res_list.append(res_ids)
+    user_ids = get_user_ids(TZBACKEND_URL, headers)
 
-    return (
-        json.dumps(res_list),
-        200,
-        {"ContentType": "application/json"},
-    )
+    expanded_user_ids = [user_ids for i in range(len(excluded_users_list))]
+
+    feasible_list = lists_difference(expanded_user_ids, excluded_users_list)
+
+    list_shuffle(feasible_list)
+
+    ml_feasible_list = lists_difference(ml_recommend_list, excluded_users_list)
+
+    res_list = concoct(ml_feasible_list, feasible_list, number_to_return)
+
+    return object_and_200(res_list)

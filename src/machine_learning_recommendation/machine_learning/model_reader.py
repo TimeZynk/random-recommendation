@@ -29,6 +29,8 @@ class ModelReader(object):
         company_id_str = company_id if isinstance(company_id, str) else str(company_id)
         if company_id_str not in self.models.keys():
             logger.warning(f"No model available for {company_id_str}.")
+            return []
+
         if (
             not isinstance(start, datetime)
             or not isinstance(end, datetime)
