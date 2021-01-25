@@ -6,6 +6,12 @@ import random
 from machine_learning_recommendation.recommendation import (
     machine_learning_models,
 )
+from machine_learning_recommendation.recommendation.filters import (
+    fetch_busy_users,
+    fetch_unavailable_users,
+    fetch_ineligible_users,
+    fetch_no_work_hrs,
+)
 import logging
 
 
@@ -49,7 +55,7 @@ def machine_learning_query(ml_on, qssec, query_shifts, num_candidates):
     for index, _id in enumerate(query_shifts):
         if ml_on:
             feed_back = machine_learning_models.recommend(
-                "5f3e1fc8d048e76cbdb4e600",  # _id
+                _id,
                 sec[index][0],
                 sec[index][1],
                 sec[index][2],
@@ -74,17 +80,21 @@ def lists_union(l1, l2, l3, l4):
     )
 
 
-def get_user_ids(backend_url, headers):
+def get_expanded_user_ids(backend_url, headers, folds):
+    """
+    Get all user_ids and keep multiple copies of it in a list and return
+    """
     logger = logging.getLogger(__name__)
     response = requests.request("GET", backend_url + "/users", headers=headers)
     if response.ok:
         users = json.loads(response.text)
-        return [user["id"] for user in users]
+        user_ids = [user["id"] for user in users]
+        return [user_ids for i in range(folds)]
     else:
         logger.warning(
             f"Fetch user-ids from backend not successful. Check if tzbackend is on."
         )
-        return []
+        return [[] for i in range(folds)]
 
 
 def lists_difference(l1, l2):
@@ -102,7 +112,7 @@ def lists_difference(l1, l2):
 
 def list_shuffle(list_of_lists):
     """
-    There is a river, called a river of ??
+    No return
     """
     for _list in list_of_lists:
         random.shuffle(_list)
@@ -133,4 +143,21 @@ def object_and_200(_object):
         json.dumps(_object),
         200,
         {"ContentType": "application/json"},
+    )
+
+
+def get_excluded_users(qsse, url, headers, user_id, query_ids):
+    busy_users_list = fetch_busy_users(qsse, url, headers)
+
+    unavailable_list = fetch_unavailable_users(qsse, url, headers)
+
+    ineligible_users_list = fetch_ineligible_users(query_ids, url, headers, user_id)
+
+    no_work_hrs_list = fetch_no_work_hrs(qsse, url, headers)
+
+    return lists_union(
+        busy_users_list,
+        unavailable_list,
+        ineligible_users_list,
+        no_work_hrs_list,
     )

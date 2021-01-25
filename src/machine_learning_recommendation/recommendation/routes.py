@@ -1,26 +1,21 @@
 from flask import request, Blueprint
 from machine_learning_recommendation.recommendation.filters import (
     fetch_shifts_start_end_created,
-    fetch_busy_users,
-    fetch_unavailable_users,
-    fetch_ineligible_users,
-    fetch_no_work_hrs,
 )
-import requests
 import json
 import os
 import logging
-from datetime import datetime
 from machine_learning_recommendation.recommendation.utils import (
     get_arg_or_default,
     get_error_return,
     machine_learning_query,
     lists_union,
     object_and_200,
-    get_user_ids,
+    get_expanded_user_ids,
     lists_difference,
     list_shuffle,
     concoct,
+    get_excluded_users,
 )
 
 recommendation = Blueprint("recommendation", __name__)
@@ -73,26 +68,13 @@ def recommend_and_return():
 
     qsse = list(map(lambda x: (x[0], x[1]), qssec))
 
-    busy_users_list = fetch_busy_users(qsse, TZBACKEND_URL, headers)
-
-    unavailable_list = fetch_unavailable_users(qsse, TZBACKEND_URL, headers)
-
-    ineligible_users_list = fetch_ineligible_users(
-        query_shifts, TZBACKEND_URL, headers, user_id
+    excluded_users_list = get_excluded_users(
+        qsse, TZBACKEND_URL, headers, user_id, query_shifts
     )
 
-    no_work_hrs_list = fetch_no_work_hrs(qsse, TZBACKEND_URL, headers)
-
-    excluded_users_list = lists_union(
-        busy_users_list,
-        unavailable_list,
-        ineligible_users_list,
-        no_work_hrs_list,
+    expanded_user_ids = get_expanded_user_ids(
+        TZBACKEND_URL, headers, len(excluded_users_list)
     )
-
-    user_ids = get_user_ids(TZBACKEND_URL, headers)
-
-    expanded_user_ids = [user_ids for i in range(len(excluded_users_list))]
 
     feasible_list = lists_difference(expanded_user_ids, excluded_users_list)
 
