@@ -25,40 +25,36 @@ class TestRoutes(TestCase):
         )
         self.func_mock1.start()
         self.func_mock2 = mock.patch(
-            file_path + ".machine_learning_query",
-            return_value=[["user1"], ["user2"]],
-        )
-        self.func_mock2.start()
-        self.func_mock3 = mock.patch(
-            file_path + ".get_excluded_users",
-            return_value=[["user3", "user4"], ["user1", "user4"]],
-        )
-        self.func_mock3.start()
-        self.func_mock4 = mock.patch(
-            file_path + ".get_expanded_user_ids",
-            return_value=[
-                [
-                    "user1",
-                    "user2",
-                    "user3",
-                    "user4",
-                ],
-                [
-                    "user1",
-                    "user2",
-                    "user3",
-                    "user4",
-                ],
-            ],
-        )
-        self.func_mock4.start()
-        self.func_mock5 = mock.patch(
             file_path + ".os.getenv",
             return_value="http://000.000.0.00:0000/api",
         )
-        self.func_mock5.start()
+        self.func_mock2.start()
 
-    def test_recommend_and_return(self):
+    @mock.patch(
+        file_path + ".machine_learning_query", return_value=[["user1"], ["user2"]]
+    )
+    @mock.patch(
+        file_path + ".get_excluded_users",
+        return_value=[["user3", "user4"], ["user1", "user4"]],
+    )
+    @mock.patch(
+        file_path + ".get_expanded_user_ids",
+        return_value=[
+            [
+                "user1",
+                "user2",
+                "user3",
+                "user4",
+            ],
+            [
+                "user1",
+                "user2",
+                "user3",
+                "user4",
+            ],
+        ],
+    )
+    def test_recommend_and_return_full(self, mock1, mock2, mock3):
         app = flask.Flask(__name__)
         with app.test_client() as client:
             client.get(
@@ -82,16 +78,97 @@ class TestRoutes(TestCase):
             self.assertEqual("user1", result_list[0][0])
             self.assertEqual("user2", result_list[1][0])
 
-    # create a unique username
-    # make the signup api call
-    # make the oauth2 api call to obtain the token
-    # use the token as header to authenticate request.
+    @mock.patch(file_path + ".machine_learning_query", return_value=[[], []])
+    @mock.patch(
+        file_path + ".get_excluded_users",
+        return_value=[["user3", "user4"], ["user1", "user4"]],
+    )
+    @mock.patch(
+        file_path + ".get_expanded_user_ids",
+        return_value=[
+            [
+                "user1",
+                "user2",
+                "user3",
+                "user4",
+            ],
+            [
+                "user1",
+                "user2",
+                "user3",
+                "user4",
+            ],
+        ],
+    )
+    def test_recommend_and_return_no_ml(self, mock1, mock2, mock3):
+        app = flask.Flask(__name__)
+        with app.test_client() as client:
+            client.get(
+                "/api/ml/v1/recommendation?user-id=mock_user_id&ids=shift1,shift2&limit=10&ml-recommend=1&ml_num_candidates=10"
+            )
+            flask.request.headers = mock.MagicMock()
+            flask.request.headers.__getitem__.return_value = "auth"
+
+            return_to_test = recommend_and_return()
+            # The return is converted into a string in object_or_200
+            # Need to revert that.
+            result_list = eval(return_to_test[0])
+
+            self.assertEqual(return_to_test[1], 200)
+            self.assertNotEqual(return_to_test[1], 400)
+            self.assertCountEqual(["user1", "user2"], result_list[0])
+            self.assertCountEqual(["user2", "user3"], result_list[1])
+
+    @mock.patch(
+        file_path + ".machine_learning_query",
+        return_value=[["user1", "user2"], ["user3", "user4"]],
+    )
+    @mock.patch(
+        file_path + ".get_excluded_users",
+        return_value=[
+            ["user1", "user2", "user3", "user4"],
+            ["user1", "user2", "user3", "user4"],
+        ],
+    )
+    @mock.patch(
+        file_path + ".get_expanded_user_ids",
+        return_value=[
+            [
+                "user1",
+                "user2",
+                "user3",
+                "user4",
+            ],
+            [
+                "user1",
+                "user2",
+                "user3",
+                "user4",
+            ],
+        ],
+    )
+    def test_recommend_and_return_all_excluded(self, mock1, mock2, mock3):
+        app = flask.Flask(__name__)
+        with app.test_client() as client:
+            client.get(
+                "/api/ml/v1/recommendation?user-id=mock_user_id&ids=shift1,shift2&limit=10&ml-recommend=1&ml_num_candidates=10"
+            )
+            flask.request.headers = mock.MagicMock()
+            flask.request.headers.__getitem__.return_value = "auth"
+
+            return_to_test = recommend_and_return()
+            # The return is converted into a string in object_or_200
+            # Need to revert that.
+            result_list = eval(return_to_test[0])
+
+            self.assertEqual(return_to_test[1], 200)
+            self.assertNotEqual(return_to_test[1], 400)
+            self.assertEqual([], result_list[0])
+            self.assertEqual([], result_list[1])
+
     def tearDown(self):
         self.func_mock1.stop()
         self.func_mock2.stop()
-        self.func_mock3.stop()
-        self.func_mock4.stop()
-        self.func_mock5.stop()
 
 
 if __name__ == "__main__":
