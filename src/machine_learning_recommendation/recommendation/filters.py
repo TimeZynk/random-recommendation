@@ -9,7 +9,9 @@ from bson.objectid import ObjectId
 
 
 def fetch_busy_users(qsse, url, headers):
-
+    """
+    For each queried shift, fetch the shifts with time overlaps, then obtain the users from each of them to create a list of users that should not be booked due to overlaps.
+    """
     logger = logging.getLogger(__name__)
     logger.debug("fetch_busy_users")
 
