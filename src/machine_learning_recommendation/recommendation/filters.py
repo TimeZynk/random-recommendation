@@ -263,3 +263,48 @@ def fetch_no_work_hrs(qsse, url, headers):
 
     no_hrs_users = fulltime_hrs_and_work_hrs(qsse, work_hours_data, url, headers)
     return no_hrs_users
+
+
+def fetch_left_users(qsse, url, headers):
+    """
+    For each queried shift, fetch the users whose "archived" value is not null, or "end" value corresponds to a date before end date of the shift.
+    """
+    logger = logging.getLogger(__name__)
+    logger.debug("fetch_busy_users")
+
+    fmt = "%Y-%m-%dT%H:%M:%S.%f"
+    date_fmt = "%Y-%m-%d"
+
+    response = requests.request("GET", url + "/users", headers=headers)
+    if response.ok:
+        users = json.loads(response.text)
+    else:
+        logger.warning("Fetching users not successful.")
+        return (
+            json.dumps("Cannot fetch users"),
+            400,
+            {"ContentType": "application/json"},
+        )
+
+    left_users_list = []
+    for qs in qsse:
+        left_users = set()
+        for user in users:
+            if (
+                ("archived" in user.keys() and user["archived"] is not None)
+                or (
+                    "end" in user.keys()
+                    and user["end"] is not None
+                    and dt.strptime(user["end"], date_fmt) < dt.strptime(qs[1], fmt)
+                )
+                or (
+                    "start" in user.keys()
+                    and user["start"] is not None
+                    and dt.strptime(user["start"], date_fmt) > dt.strptime(qs[0], fmt)
+                )
+            ):
+                left_users.add(user["id"])
+
+        left_users_list.append(left_users)
+
+    return left_users_list

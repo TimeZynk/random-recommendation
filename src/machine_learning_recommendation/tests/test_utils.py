@@ -8,6 +8,7 @@ from machine_learning_recommendation.recommendation.utils import (
     get_error_return,
     concoct,
     machine_learning_query,
+    lists_union,
 )
 import flask
 import json
@@ -110,6 +111,18 @@ class TestUtils(TestCase):
         ):
             result = machine_learning_query(True, qssec, query_shifts, 10)
             self.assertEqual(result, [["u1", "u2"], ["u3", "u4"], ["u5", "u6"]])
+
+    def test_list_union(self):
+        l1 = [{1, 2}]
+        l2 = [{2, 3}]
+        l3 = [{3, 4}]
+        l4 = [{4, 5}]
+        # result = lists_union(l1, l2, l3, l4)
+        # self.assertEqual(result, [{1, 2, 3, 4, 5}])
+
+        l5 = [{5, 6}]
+        result = lists_union(l1, l2, l3, l4, l5)
+        self.assertEqual(result, [{1, 2, 3, 4, 5, 6}])
 
 
 if __name__ == "__main__":

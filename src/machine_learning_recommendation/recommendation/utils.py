@@ -11,6 +11,7 @@ from machine_learning_recommendation.recommendation.filters import (
     fetch_unavailable_users,
     fetch_ineligible_users,
     fetch_no_work_hrs,
+    fetch_left_users,
 )
 import logging
 
@@ -68,15 +69,9 @@ def machine_learning_query(ml_on, qssec, query_shifts, num_candidates):
     return recommend_list
 
 
-def lists_union(l1, l2, l3, l4):
+def lists_union(l1, l2, l3, l4, l5):
     return list(
-        map(
-            lambda x1, x2, x3, x4: x1.union(x2, x3, x4),
-            l1,
-            l2,
-            l3,
-            l4,
-        )
+        map(lambda x1, x2, x3, x4, x5: x1.union(x2, x3, x4, x5), l1, l2, l3, l4, l5)
     )
 
 
@@ -150,9 +145,12 @@ def get_excluded_users(qsse, url, headers, user_id, query_ids):
 
     no_work_hrs_list = fetch_no_work_hrs(qsse, url, headers)
 
+    left_users_list = fetch_left_users(qsse, url, headers)
+
     return lists_union(
         busy_users_list,
         unavailable_list,
         ineligible_users_list,
         no_work_hrs_list,
+        left_users_list,
     )

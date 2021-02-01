@@ -3,22 +3,25 @@ from unittest import mock, TestCase
 import sys
 
 sys.path.append("/home/chuck/folder/recommend/recommend-api/src/")
-from datetime import datetime
+from datetime import datetime, timedelta
 from machine_learning_recommendation.recommendation.filters import (
     fetch_busy_users,
     fetch_unavailable_users,
+    fetch_left_users,
 )
 import json
 
 file_path = "machine_learning_recommendation.recommendation.filters"
 
+now_str = datetime.strftime(datetime.now(), "%Y-%m-%dT%H:%M:%S.%f")
+
 
 class TestFilters(TestCase):
     def setUp(self):
         self.qsse = [
-            [datetime.now(), datetime.now()],
-            [datetime.now(), datetime.now()],
-            [datetime.now(), datetime.now()],
+            [now_str, now_str],
+            [now_str, now_str],
+            [now_str, now_str],
         ]
         self.url = "tzbackend"
         self.headers = {"headers": "headers"}
@@ -82,6 +85,31 @@ class TestFilters(TestCase):
             result = fetch_unavailable_users(self.qsse, self.url, self.headers)
             # sets are orderless.
             self.assertEqual(result, expected)
+
+    @mock.patch(file_path + ".requests.request")
+    def test_fetch_left_users(self, mock_request):
+        tomorrow = datetime.strftime(datetime.now() + timedelta(days=1), "%Y-%m-%d")
+        yesterday = datetime.strftime(datetime.now() - timedelta(days=1), "%Y-%m-%d")
+
+        return_value = [
+            {"id": "u1", "archived": 1598604054932},
+            {"id": "u2"},
+            {"id": "u3", "start": tomorrow},
+            {"id": "u4", "end": yesterday},
+            {"id": "u5"},
+            {"id": "u6"},
+        ]
+
+        expected = [
+            {"u1", "u3", "u4"},
+            {"u1", "u3", "u4"},
+            {"u1", "u3", "u4"},
+        ]
+        mock_request.text = "whatever"
+        with mock.patch(file_path + ".json.loads", return_value=return_value):
+            result = fetch_left_users(self.qsse, self.url, self.headers)
+            # sets are orderless.
+            self.assertCountEqual(result, expected)
 
 
 if __name__ == "__main__":
