@@ -13,7 +13,6 @@ from machine_learning_recommendation.recommendation.utils import (
     object_and_200,
     get_expanded_user_ids,
     lists_difference,
-    list_shuffle,
     concoct,
     get_excluded_users,
 )
@@ -77,8 +76,6 @@ def recommend_and_return():
     )
 
     feasible_list = lists_difference(expanded_user_ids, excluded_users_list)
-
-    list_shuffle(feasible_list)
 
     ml_feasible_list = lists_difference(ml_recommend_list, excluded_users_list)
 

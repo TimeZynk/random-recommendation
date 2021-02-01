@@ -110,14 +110,6 @@ def lists_difference(l1, l2):
     return ret
 
 
-def list_shuffle(list_of_lists):
-    """
-    No return
-    """
-    for _list in list_of_lists:
-        random.shuffle(_list)
-
-
 def concoct(ml_list, random_list, num_candidates):
     """
     Pick out num_cadidates numbers of users for each shift under query,
@@ -134,6 +126,9 @@ def concoct(ml_list, random_list, num_candidates):
             random_set_i = set(random_list_i)
             diff_set_i = random_set_i - ml_set_i
             diff_list_i = list(diff_set_i)
+            # Add randomness after list-set-list conversion
+            # to prevent randomness from lost.
+            random.shuffle(diff_list_i)
             ret.append(ml_list_i + diff_list_i[: num_candidates - len(ml_list_i)])
     return ret
 
