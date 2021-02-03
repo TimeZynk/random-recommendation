@@ -8,6 +8,8 @@ To use the recommend, run:
   1. docker build -t recommendation:latest .\
   2. docker run -it -p 5000:5000 -v "/local/directory/for/trained_models:/app/trained_models" -e TZBACKEND_URL=url_for_tzbackend recommendation
   
+The trained models can be obtained by running ml_model, which generates a model for each viable company. Note that the company without subscription will not be trained. Also, the company has to have at least 100 shifts to intiate the training. Otherwise, in either of these two scenarios, only random recommendation will be returned by the api call.   
+
 When the Flask app is up and running, we can try the recommendation by providing the same oauth2 that you have for tzbackend. And make http request as follow on insomnia:
 
   http://.../api/ml/v1/recommendation
