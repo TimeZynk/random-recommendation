@@ -5,8 +5,8 @@ Also, filters of users on the basis of whether is booked already, availability, 
 
 To use the recommend, run:
 
-  docker build -t recommendation:latest .\
-  docker run -it -p 5000:5000 -v "/local/directory/for/trained_models:/app/trained_models" -e TZBACKEND_URL=url_for_tzbackend recommendation\
+  1. docker build -t recommendation:latest .\
+  2. docker run -it -p 5000:5000 -v "/local/directory/for/trained_models:/app/trained_models" -e TZBACKEND_URL=url_for_tzbackend recommendation
   
 When the Flask app is up and running, we can try the recommendation by providing the same oauth2 that you have for tzbackend. And make http request as follow on insomnia:
 
