@@ -13,8 +13,6 @@ RUN pip3 install -r requirements.txt
 # copy the content of the local src directory to the working directory
 COPY src/ .
 
-COPY trained_models .
-
 # Precompile python code for performance
 RUN python3 -m compileall .
 
