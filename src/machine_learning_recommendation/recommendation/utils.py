@@ -4,7 +4,7 @@ import json
 import requests
 import random
 from machine_learning_recommendation.recommendation import (
-    machine_learning_models,
+    machine_learning_watcher,
 )
 from machine_learning_recommendation.recommendation.filters import (
     fetch_busy_users,
@@ -55,7 +55,7 @@ def machine_learning_query(ml_on, qssec, query_shifts, num_candidates):
 
     for index, _id in enumerate(query_shifts):
         if ml_on:
-            feed_back = machine_learning_models.recommend(
+            feed_back = machine_learning_watcher.recommend(
                 _id,
                 sec[index][0],
                 sec[index][1],

@@ -24,6 +24,12 @@ class ModelReader(object):
     def delete_all(self):
         self.models.clear()
 
+    def reload_all(self):
+        logger = logging.getLogger(__name__)
+        logger.warning("All machine learning models will now be reloaded.")
+        self.delete_all()
+        self.read_all()
+
     def recommend(self, company_id, start, end, created, num_candidates=10):
         logger = logging.getLogger(__name__)
         company_id_str = company_id if isinstance(company_id, str) else str(company_id)

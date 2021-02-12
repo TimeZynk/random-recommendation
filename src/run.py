@@ -13,5 +13,5 @@ if __name__ == "__main__":
     # Configuring logging from file also works.
     # log_file_path = path.join(path.dirname(path.abspath(__file__)), 'logger.conf')
     # logging.config.fileConfig(log_file_path)
-    setup_logging("WARNING")
+    setup_logging("INFO")
     app.run(host="0.0.0.0")
