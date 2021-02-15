@@ -16,13 +16,11 @@ COPY src/ .
 # Precompile python code for performance
 RUN python3 -m compileall .
 
-ENV TZBACKEND_URL=http://localhost:8989/api
+#ENV TZBACKEND_URL=http://localhost:8989/api
 
 ENV ML_MODELS_DIR=/app/trained_models
 
 ENV DELAY_IN_SECONDS=60
-
-EXPOSE 5000
 
 # command to run on container start
 CMD [ "python3", "./run.py" ]
