@@ -1,2 +1,5 @@
+import os
+
+
 class Config:
-    DEBUG = False
+    DEBUG = bool(os.getenv("DEBUG"))

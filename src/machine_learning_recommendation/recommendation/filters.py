@@ -130,12 +130,16 @@ def fetch_ineligible_users(shifts, url, headers, user_id):
 
     ineligible_users = []
     for combinations in combinations_list:
-        elig_it = filter(
-            lambda x: "combinations" not in x.keys()
-            or not set(combinations).issubset(set(x["combinations"])),
+        inelig_it = filter(
+            lambda x: len(combinations) != 0
+            and (
+                "combinations" not in x.keys()
+                or not set(combinations).issubset(set(x["combinations"]))
+            ),
             users,
         )
-        ineligible_users.append(set(map(lambda x: x["id"], elig_it)))
+
+        ineligible_users.append(set(map(lambda x: x["id"], inelig_it)))
 
     return ineligible_users
 
