@@ -137,6 +137,8 @@ def object_and_200(_object):
 
 
 def get_excluded_users(qsse, url, headers, user_id, query_ids):
+    logger = logging.getLogger(__name__)
+    logger.info("get_excluded_users")
     busy_users_list = fetch_busy_users(qsse, url, headers)
 
     unavailable_list = fetch_unavailable_users(qsse, url, headers)
