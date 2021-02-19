@@ -20,9 +20,9 @@ RUN python3 -m compileall .
 
 #ENV TZBACKEND_URL=http://localhost:8989/api
 
-ENV ML_MODELS_DIR=/app/trained_models
+#ENV ML_MODELS_DIR=/app/trained_models
 
-ENV DELAY_IN_SECONDS=60
+#ENV DELAY_IN_SECONDS=60
 
 # command to run on container start
 CMD [ "python3", "./run.py" ]
